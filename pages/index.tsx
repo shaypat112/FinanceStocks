@@ -45,7 +45,16 @@ export default function Home() {
     }
   }, []);
 
-  const [multiDayData, setMultiDayData] = useState([]);
+  type MultiDayEntry = {
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+};
+
+const [multiDayData, setMultiDayData] = useState<MultiDayEntry[]>([]);
   const [marketStatus, setMarketStatus] = useState('Loading...');
   const [time, setTime] = useState(new Date());
 
