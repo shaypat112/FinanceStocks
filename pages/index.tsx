@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { CSSProperties } from 'react';
+
 
 interface StockData {
   date: string;
@@ -485,7 +487,7 @@ function LoadingSpinner() {
   );
 }
 
-const styles = {
+const styles: { [key: string]: CSSProperties } = {
   main: {
     maxWidth: '600px',
     margin: '3rem auto',
