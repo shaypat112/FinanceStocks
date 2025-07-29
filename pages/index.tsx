@@ -1,9 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
+interface StockData {
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  prevClose: number | null;
+}
+
+
 export default function Home() {
   const [symbol, setSymbol] = useState('');
-  const [stockData, setStockData] = useState(null);
+  const [stockData, setStockData] = useState<StockData | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
