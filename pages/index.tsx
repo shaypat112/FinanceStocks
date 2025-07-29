@@ -6,13 +6,19 @@ export default function Home() {
   const [stockData, setStockData] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [history, setHistory] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('stockSearchHistory')) || [];
-    } catch {
-      return [];
+ const [history, setHistory] = useState<string[]>([]); // start empty on server and client
+
+useEffect(() => {
+  try {
+    const item = localStorage.getItem('stockSearchHistory');
+    if (item) {
+      setHistory(JSON.parse(item));
     }
-  });
+  } catch {
+    setHistory([]);
+  }
+}, []);
+
   const [favorites, setFavorites] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('stockFavorites')) || [];
