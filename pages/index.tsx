@@ -11,12 +11,11 @@ interface StockData {
   prevClose: number | null;
 }
 
-
 export default function Home() {
-  const [symbol, setSymbol] = useState('');
+  const [symbol, setSymbol] = useState<string>('');
   const [stockData, setStockData] = useState<StockData | null>(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
 
   // History: start empty, then load from localStorage on client
   const [history, setHistory] = useState<string[]>([]);
