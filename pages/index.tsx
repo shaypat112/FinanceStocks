@@ -6,34 +6,42 @@ export default function Home() {
   const [stockData, setStockData] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
- const [history, setHistory] = useState<string[]>([]); // start empty on server and client
 
-useEffect(() => {
-  try {
-    const item = localStorage.getItem('stockSearchHistory');
-    if (item) {
-      setHistory(JSON.parse(item));
-    }
-  } catch {
-    setHistory([]);
-  }
-}, []);
+  // History: start empty, then load from localStorage on client
+  const [history, setHistory] = useState<string[]>([]);
 
-  const [favorites, setFavorites] = useState(() => {
+  useEffect(() => {
     try {
-      return JSON.parse(localStorage.getItem('stockFavorites')) || [];
+      const item = localStorage.getItem('stockSearchHistory');
+      if (item) {
+        setHistory(JSON.parse(item));
+      }
     } catch {
-      return [];
+      setHistory([]);
     }
-  });
-  const [darkMode, setDarkMode] = useState(false);
+  }, []);
+
+  // Favorites: same pattern, lazy init in useEffect
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('stockFavorites');
+      if (stored) {
+        setFavorites(JSON.parse(stored));
+      }
+    } catch {
+      setFavorites([]);
+    }
+  }, []);
+
   const [multiDayData, setMultiDayData] = useState([]);
   const [marketStatus, setMarketStatus] = useState('Loading...');
   const [time, setTime] = useState(new Date());
 
-  const inputRef = useRef();
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Market open/close checker (simple EST market time 9:30-16:00)
+  // Market open/close checker (EST time 9:30-16:00)
   useEffect(() => {
     function checkMarketStatus() {
       const now = new Date();
@@ -65,7 +73,7 @@ useEffect(() => {
   }, [favorites]);
 
   // Toggle favorite
-  function toggleFavorite(sym) {
+  function toggleFavorite(sym: string) {
     if (favorites.includes(sym)) {
       setFavorites(favorites.filter(f => f !== sym));
     } else {
@@ -73,8 +81,8 @@ useEffect(() => {
     }
   }
 
-  // Add to history, max 10
-  function addToHistory(sym) {
+  // Add to history, max 10 items
+  function addToHistory(sym: string) {
     setHistory(prev => {
       const newHist = [sym, ...prev.filter(h => h !== sym)].slice(0, 10);
       return newHist;
@@ -82,7 +90,8 @@ useEffect(() => {
   }
 
   // Format price change + percent with arrows
-  function renderChange(close, prevClose) {
+  function renderChange(close: number, prevClose: number | null) {
+    if (prevClose === null) return null;
     const change = close - prevClose;
     const percent = (change / prevClose) * 100;
     const arrow = change > 0 ? '▲' : change < 0 ? '▼' : '';
@@ -169,27 +178,9 @@ useEffect(() => {
     const sym = urlParams.get('symbol');
     if (sym) {
       setSymbol(sym.toUpperCase());
-      setTimeout(fetchStock, 300); // slight delay
+      setTimeout(fetchStock, 300);
     }
   }, []);
-
-  // --- Placeholder scaffolds for other features ---
-
-  // Voice search scaffold (Web Speech API)
-  // function startVoiceSearch() {
-  //   if (!('webkitSpeechRecognition' in window)) {
-  //     alert('Voice search not supported in this browser.');
-  //     return;
-  //   }
-  //   const recognition = new window.webkitSpeechRecognition();
-  //   recognition.lang = 'en-US';
-  //   recognition.onresult = (event) => {
-  //     const spoken = event.results[0][0].transcript.trim().toUpperCase();
-  //     setSymbol(spoken);
-  //     fetchStock();
-  //   };
-  //   recognition.start();
-  // }
 
   // Export CSV scaffold
   function exportCSV() {
@@ -210,9 +201,7 @@ useEffect(() => {
     URL.revokeObjectURL(url);
   }
 
-  // TODO: caching API results to improve performance and reduce API calls
-
-  // TODO: news feed integration - placeholder below
+  // Placeholder news feed
   const news = [
     { title: 'Market rallies on positive earnings', url: '#' },
     { title: 'Tech stocks lead the way', url: '#' },
@@ -221,18 +210,11 @@ useEffect(() => {
 
   return (
     <>
-      <div className={darkMode ? 'dark' : ''}>
+      <div>
         <div className="background" />
         <main style={styles.main}>
           <header style={styles.header}>
             <h1 style={styles.title}>Stock Predictor</h1>
-            <button
-              onClick={() => setDarkMode((d) => !d)}
-              aria-label="Toggle dark mode"
-              style={styles.darkModeBtn}
-            >
-              {darkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
-            </button>
           </header>
 
           <p style={styles.marketStatus}>
@@ -255,7 +237,6 @@ useEffect(() => {
               list="suggestions"
             />
             <datalist id="suggestions">
-              {/* Basic autocomplete options */}
               {['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NFLX', 'NVDA'].map(
                 (s) => (
                   <option key={s} value={s} />
@@ -265,8 +246,6 @@ useEffect(() => {
             <button onClick={fetchStock} style={styles.button} disabled={loading}>
               {loading ? <LoadingSpinner /> : 'Get Data'}
             </button>
-            {/* Uncomment to enable voice search */}
-            {/* <button onClick={startVoiceSearch} style={styles.voiceBtn} title="Voice Search">🎤</button> */}
           </div>
 
           {error && <p style={styles.error}>{error}</p>}
@@ -333,9 +312,7 @@ useEffect(() => {
                     <td style={styles.label}>Close</td>
                     <td style={styles.value}>
                       ${stockData.close.toFixed(2)}{' '}
-                      {stockData.prevClose !== null
-                        ? renderChange(stockData.close, stockData.prevClose)
-                        : ''}
+                      {renderChange(stockData.close, stockData.prevClose)}
                     </td>
                   </tr>
                   <tr>
@@ -455,28 +432,6 @@ useEffect(() => {
             background-position: 1000px 1000px;
           }
         }
-
-        /* Dark mode styles */
-        .dark main {
-          background-color: #111827;
-          color: #d1d5db;
-        }
-        .dark input {
-          background-color: #1f2937;
-          color: #e5e7eb;
-          border-color: #374151;
-        }
-        .dark button {
-          background-color: #3b82f6;
-          color: white;
-        }
-        .dark table {
-          background-color: #1f2937;
-          color: #d1d5db;
-        }
-        .dark th, .dark td {
-          border-color: #374151;
-        }
       `}</style>
     </>
   );
@@ -515,10 +470,11 @@ const styles = {
   main: {
     maxWidth: '600px',
     margin: '3rem auto',
-    fontFamily: "'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif",
-    color: '#f9f9f9', // bright white text
+    fontFamily:
+      "'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif",
+    color: '#f9f9f9',
     padding: '2rem 1rem',
-    backgroundColor: '#000000', // pure black background
+    backgroundColor: '#000000',
     borderRadius: '12px',
     boxShadow: '0 8px 24px rgba(255, 255, 255, 0.1)',
 
@@ -550,19 +506,6 @@ const styles = {
     margin: 0,
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
-  },
-
-  darkModeBtn: {
-    backgroundColor: '#fff',
-    border: 'none',
-    color: '#000',
-    fontWeight: 700,
-    borderRadius: '8px',
-    padding: '0.5rem 1.2rem',
-    cursor: 'pointer',
-    fontSize: '1rem',
-    boxShadow: '0 0 10px rgba(255,255,255,0.4)',
-    transition: 'all 0.3s ease',
   },
 
   marketStatus: {
@@ -605,11 +548,6 @@ const styles = {
     fontWeight: 700,
     letterSpacing: '0.05em',
     transition: 'background-color 0.3s ease, color 0.3s ease',
-  },
-
-  buttonHover: {
-    backgroundColor: '#fff',
-    color: '#000',
   },
 
   exportBtn: {
@@ -728,10 +666,6 @@ const styles = {
     color: '#000',
     letterSpacing: '0.04em',
     transition: 'background-color 0.3s ease',
-  },
-
-  historyButtonHover: {
-    backgroundColor: '#ddd',
   },
 
   newsSection: {
